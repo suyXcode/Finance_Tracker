@@ -1,0 +1,85 @@
+{% extends "base.html" %}
+{% load finance_tags %}
+
+{% block title %}Categories{% endblock %}
+
+{% block content %}
+<div class="row g-3">
+
+  <!-- User categories -->
+  <div class="col-lg-6">
+    <div class="content-card">
+      <div class="card-header">
+        <span><i class="bi bi-tags me-2 text-primary"></i>My Custom Categories</span>
+        <a href="{% url 'tracker:category_create' %}" class="btn btn-primary btn-sm">
+          <i class="bi bi-plus-lg me-1"></i>Add
+        </a>
+      </div>
+      <div class="card-body p-0">
+        {% if user_categories %}
+        <table class="txn-table">
+          <thead>
+            <tr><th>Color</th><th>Name</th><th>Icon</th><th class="text-center">Actions</th></tr>
+          </thead>
+          <tbody>
+            {% for cat in user_categories %}
+            <tr>
+              <td>
+                <span style="display:inline-block;width:20px;height:20px;border-radius:6px;background:{{ cat.color }};"></span>
+              </td>
+              <td class="fw-600">{{ cat.name }}</td>
+              <td><i class="bi {{ cat.icon }}"></i></td>
+              <td class="text-center">
+                <div class="action-btns justify-content-center">
+                  <a href="{% url 'tracker:category_edit' cat.pk %}" class="btn btn-sm btn-outline-secondary">
+                    <i class="bi bi-pencil"></i>
+                  </a>
+                  <a href="{% url 'tracker:category_delete' cat.pk %}" class="btn btn-sm btn-outline-danger"
+                     data-confirm="Delete category '{{ cat.name }}'?">
+                    <i class="bi bi-trash"></i>
+                  </a>
+                </div>
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+        {% else %}
+        <div class="empty-state">
+          <i class="bi bi-tags"></i>
+          <p>No custom categories yet.<br>
+            <a href="{% url 'tracker:category_create' %}">Create one</a>
+          </p>
+        </div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+
+  <!-- Global/predefined categories -->
+  <div class="col-lg-6">
+    <div class="content-card">
+      <div class="card-header">
+        <span><i class="bi bi-globe me-2 text-secondary"></i>Predefined Categories</span>
+        <span class="badge bg-secondary">Read-only</span>
+      </div>
+      <div class="card-body p-0">
+        <table class="txn-table">
+          <thead>
+            <tr><th>Color</th><th>Name</th><th>Icon</th></tr>
+          </thead>
+          <tbody>
+            {% for cat in global_categories %}
+            <tr>
+              <td><span style="display:inline-block;width:20px;height:20px;border-radius:6px;background:{{ cat.color }};"></span></td>
+              <td class="fw-600">{{ cat.name }}</td>
+              <td><i class="bi {{ cat.icon }}"></i></td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

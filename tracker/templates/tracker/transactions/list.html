@@ -1,0 +1,161 @@
+{% extends "base.html" %}
+{% load finance_tags %}{% load humanize %}
+
+{% block title %}Transactions{% endblock %}
+
+{% block content %}
+
+<!-- Filter bar -->
+<div class="content-card mb-3">
+  <div class="card-body py-2">
+    <form method="get" id="filter-form" class="row g-2 align-items-end">
+      <div class="col-sm-6 col-md-3 col-lg-2">
+        <label class="form-label mb-1" style="font-size:.75rem;font-weight:600;text-transform:uppercase;letter-spacing:.5px;color:#6c757d;">Type</label>
+        {{ filter_form.type }}
+      </div>
+      <div class="col-sm-6 col-md-3 col-lg-2">
+        <label class="form-label mb-1" style="font-size:.75rem;font-weight:600;text-transform:uppercase;letter-spacing:.5px;color:#6c757d;">Category</label>
+        {{ filter_form.category }}
+      </div>
+      <div class="col-sm-6 col-md-3 col-lg-2">
+        <label class="form-label mb-1" style="font-size:.75rem;font-weight:600;text-transform:uppercase;letter-spacing:.5px;color:#6c757d;">From</label>
+        {{ filter_form.date_from }}
+      </div>
+      <div class="col-sm-6 col-md-3 col-lg-2">
+        <label class="form-label mb-1" style="font-size:.75rem;font-weight:600;text-transform:uppercase;letter-spacing:.5px;color:#6c757d;">To</label>
+        {{ filter_form.date_to }}
+      </div>
+      <div class="col-sm-8 col-md-4 col-lg-3">
+        <label class="form-label mb-1" style="font-size:.75rem;font-weight:600;text-transform:uppercase;letter-spacing:.5px;color:#6c757d;">Search</label>
+        {{ filter_form.search }}
+      </div>
+      <div class="col-sm-4 col-md-2 col-lg-1 d-flex gap-1">
+        <button type="submit" class="btn btn-primary btn-sm flex-fill">
+          <i class="bi bi-search"></i>
+        </button>
+        <a href="{% url 'tracker:transaction_list' %}" class="btn btn-outline-secondary btn-sm flex-fill">
+          <i class="bi bi-x"></i>
+        </a>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Table card -->
+<div class="content-card">
+  <div class="card-header">
+    <span>
+      <i class="bi bi-arrow-left-right me-2 text-primary"></i>
+      Transactions
+      {% if page_obj.paginator.count %}
+        <span class="badge bg-primary ms-1">{{ page_obj.paginator.count }}</span>
+      {% endif %}
+    </span>
+    <a href="{% url 'tracker:transaction_create' %}" class="btn btn-primary btn-sm">
+      <i class="bi bi-plus-lg me-1"></i>Add
+    </a>
+  </div>
+
+  {% if transactions %}
+  <div class="p-0">
+    <table class="txn-table">
+      <thead>
+        <tr>
+          <th>Date</th>
+          <th>Type</th>
+          <th>Category</th>
+          <th>Description</th>
+          <th class="text-end">Amount</th>
+          <th class="text-center">Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for txn in transactions %}
+        <tr>
+          <td>
+            <span class="fw-600" style="font-size:.84rem;">{{ txn.date|date:"d M Y" }}</span>
+          </td>
+          <td>
+            <span class="badge rounded-pill badge-{{ txn.type }}">
+              {{ txn.get_type_display }}
+            </span>
+          </td>
+          <td>
+            {% if txn.category %}
+            <span class="cat-chip">
+              <span class="cat-dot" style="background:{{ txn.category.color }};"></span>
+              {{ txn.category.name }}
+            </span>
+            {% else %}
+            <span class="text-muted">—</span>
+            {% endif %}
+          </td>
+          <td class="text-truncate" style="max-width:200px;">
+            {{ txn.description|default:"—" }}
+          </td>
+          <td class="text-end {{ txn.type|income_color }} fw-700">
+            {{ txn.type|sign_prefix }}{{ txn.amount|currency }}
+          </td>
+          <td class="text-center">
+            <div class="action-btns justify-content-center">
+              <a href="{% url 'tracker:transaction_edit' txn.pk %}"
+                 class="btn btn-sm btn-outline-secondary" title="Edit">
+                <i class="bi bi-pencil"></i>
+              </a>
+              <a href="{% url 'tracker:transaction_delete' txn.pk %}"
+                 class="btn btn-sm btn-outline-danger" title="Delete"
+                 data-confirm="Delete this transaction?">
+                <i class="bi bi-trash"></i>
+              </a>
+            </div>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Pagination -->
+  {% if page_obj.has_other_pages %}
+  <div class="card-body border-top pt-3">
+    <nav>
+      <ul class="pagination pagination-sm justify-content-center mb-0">
+        {% if page_obj.has_previous %}
+          <li class="page-item">
+            <a class="page-link" href="?{{ query_string }}&page={{ page_obj.previous_page_number }}">
+              <i class="bi bi-chevron-left"></i>
+            </a>
+          </li>
+        {% endif %}
+        {% for num in page_obj.paginator.page_range %}
+          {% if page_obj.number == num %}
+            <li class="page-item active"><span class="page-link">{{ num }}</span></li>
+          {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+            <li class="page-item">
+              <a class="page-link" href="?{{ query_string }}&page={{ num }}">{{ num }}</a>
+            </li>
+          {% endif %}
+        {% endfor %}
+        {% if page_obj.has_next %}
+          <li class="page-item">
+            <a class="page-link" href="?{{ query_string }}&page={{ page_obj.next_page_number }}">
+              <i class="bi bi-chevron-right"></i>
+            </a>
+          </li>
+        {% endif %}
+      </ul>
+    </nav>
+  </div>
+  {% endif %}
+
+  {% else %}
+  <div class="empty-state">
+    <i class="bi bi-receipt-cutoff"></i>
+    <p>No transactions found.<br>
+      <a href="{% url 'tracker:transaction_create' %}">Add your first one.</a>
+    </p>
+  </div>
+  {% endif %}
+
+</div>
+{% endblock %}

@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+{% load finance_tags %}
+
+{% block title %}Delete Transaction{% endblock %}
+
+{% block content %}
+<div class="form-card mx-auto text-center">
+  <div style="font-size:3rem;margin-bottom:1rem;">🗑️</div>
+  <h5 class="fw-700 text-danger mb-1">Delete Transaction?</h5>
+  <p class="text-muted mb-1" style="font-size:.88rem;">
+    <strong>{{ object.get_type_display }}</strong> of
+    <strong>{{ object.amount|currency }}</strong>
+    on {{ object.date|date:"d M Y" }}
+  </p>
+  {% if object.description %}
+  <p class="text-muted" style="font-size:.83rem;">{{ object.description }}</p>
+  {% endif %}
+  <p class="text-muted mb-4" style="font-size:.82rem;">This action cannot be undone.</p>
+  <form method="post" class="d-flex justify-content-center gap-2">
+    {% csrf_token %}
+    <button type="submit" class="btn btn-danger px-4">Yes, delete</button>
+    <a href="{% url 'tracker:transaction_list' %}" class="btn btn-outline-secondary px-4">Cancel</a>
+  </form>
+</div>
+{% endblock %}

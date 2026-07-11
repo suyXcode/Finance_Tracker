@@ -1,0 +1,224 @@
+{% extends "base.html" %}
+{% load finance_tags %}
+
+{% block title %}Analytics{% endblock %}
+
+{% block extra_head %}
+<script type="text/javascript" src="https://www.gstatic.com/charts/loader.js"></script>
+{% endblock %}
+
+{% block content %}
+
+<!-- Period selector -->
+<div class="content-card mb-3">
+  <div class="card-body py-2">
+    <div class="d-flex flex-wrap align-items-center gap-3">
+      <span class="fw-600" style="font-size:.85rem;color:#6c757d;">Period:</span>
+      <select id="sel-month" class="form-select form-select-sm" style="width:130px;">
+        <option value="1">January</option><option value="2">February</option>
+        <option value="3">March</option><option value="4">April</option>
+        <option value="5">May</option><option value="6">June</option>
+        <option value="7">July</option><option value="8">August</option>
+        <option value="9">September</option><option value="10">October</option>
+        <option value="11">November</option><option value="12">December</option>
+      </select>
+      <select id="sel-year" class="form-select form-select-sm" style="width:90px;">
+          <option value="2022">2022</option>
+        <option value="2023">2023</option>
+        <option value="2024">2024</option>
+        <option value="2025">2025</option>
+        <option value="2026">2026</option>
+      </select>
+      <button id="btn-refresh" class="btn btn-primary btn-sm">
+        <i class="bi bi-arrow-clockwise me-1"></i>Refresh
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- Charts row 1 -->
+<div class="row g-3 mb-3">
+  <div class="col-lg-5">
+    <div class="content-card h-100">
+      <div class="card-header">
+        <span><i class="bi bi-pie-chart me-2 text-primary"></i>Spending by Category</span>
+        <span id="pie-period" class="badge bg-light text-secondary"></span>
+      </div>
+      <div class="card-body p-2">
+        <div id="chart-pie" class="chart-container">
+          <div class="chart-loading"><i class="bi bi-hourglass-split me-1"></i>Loading…</div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="col-lg-7">
+    <div class="content-card h-100">
+      <div class="card-header">
+        <span><i class="bi bi-graph-up me-2 text-primary"></i>Income vs Expenses (6 months)</span>
+      </div>
+      <div class="card-body p-2">
+        <div id="chart-line" class="chart-container">
+          <div class="chart-loading"><i class="bi bi-hourglass-split me-1"></i>Loading…</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Charts row 2 -->
+<div class="row g-3">
+  <div class="col-12">
+    <div class="content-card">
+      <div class="card-header">
+        <span><i class="bi bi-bar-chart me-2 text-primary"></i>Weekly Spending (last 8 weeks)</span>
+      </div>
+      <div class="card-body p-2">
+        <div id="chart-bar" class="chart-container" style="min-height:280px;">
+          <div class="chart-loading"><i class="bi bi-hourglass-split me-1"></i>Loading…</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// ── Google Charts init ────────────────────────────────────
+google.charts.load('current', { packages: ['corechart', 'bar'] });
+google.charts.setOnLoadCallback(initCharts);
+
+const MONTH = {{ current_month }};
+const YEAR  = {{ current_year }};
+
+// Pre-select dropdowns
+document.getElementById('sel-month').value = MONTH;
+document.getElementById('sel-year').value  = YEAR;
+
+function initCharts() {
+  loadAll();
+  document.getElementById('btn-refresh').addEventListener('click', loadAll);
+}
+
+function getSelMonth() { return parseInt(document.getElementById('sel-month').value); }
+function getSelYear()  { return parseInt(document.getElementById('sel-year').value); }
+
+// ── Fetch helpers ─────────────────────────────────────────
+
+async function fetchJSON(url) {
+  const res = await fetch(url, { headers: { 'X-Requested-With': 'XMLHttpRequest' } });
+  if (!res.ok) throw new Error('Network error');
+  return res.json();
+}
+
+function setLoading(id) {
+  document.getElementById(id).innerHTML =
+    '<div class="chart-loading"><i class="bi bi-hourglass-split me-1"></i>Loading…</div>';
+}
+
+function setError(id, msg) {
+  document.getElementById(id).innerHTML =
+    `<div class="chart-loading text-danger"><i class="bi bi-exclamation-circle me-1"></i>${msg}</div>`;
+}
+
+// ── Load all 3 charts ─────────────────────────────────────
+
+function loadAll() {
+  const m = getSelMonth(), y = getSelYear();
+  loadPieChart(m, y);
+  loadLineChart();
+  loadBarChart();
+}
+
+// ── Pie Chart ─────────────────────────────────────────────
+async function loadPieChart(month, year) {
+  setLoading('chart-pie');
+  try {
+    const json = await fetchJSON(`/api/charts/category-spending/?month=${month}&year=${year}`);
+    if (json.data.length <= 1) {
+      document.getElementById('chart-pie').innerHTML =
+        '<div class="empty-state"><i class="bi bi-pie-chart" style="font-size:2rem;display:block;margin-bottom:.5rem;"></i><p>No expense data for this period.</p></div>';
+      return;
+    }
+    const data = google.visualization.arrayToDataTable(json.data);
+    const options = {
+      pieHole: 0.42,
+      chartArea: { width: '90%', height: '85%' },
+      legend: { position: 'right', textStyle: { fontSize: 12 } },
+      colors: ['#4361ee','#f72585','#4cc9f0','#7209b7','#f77f00',
+               '#2dc653','#e63946','#adb5bd','#ffd60a','#06d6a0'],
+      fontName: 'DM Sans',
+      backgroundColor: 'transparent',
+      sliceVisibilityThreshold: 0,
+    };
+    const chart = new google.visualization.PieChart(document.getElementById('chart-pie'));
+    chart.draw(data, options);
+
+    // Update period badge
+    const months = ['','Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+    document.getElementById('pie-period').textContent = `${months[month]} ${year}`;
+  } catch(e) { setError('chart-pie', 'Failed to load chart'); }
+}
+
+// ── Line Chart ────────────────────────────────────────────
+async function loadLineChart() {
+  setLoading('chart-line');
+  try {
+    const json = await fetchJSON('/api/charts/monthly-trend/?months=6');
+    const dataArr = [['Month', 'Income', 'Expenses']];
+    json.labels.forEach((label, i) => {
+      dataArr.push([label, json.income[i], json.expense[i]]);
+    });
+    const data = google.visualization.arrayToDataTable(dataArr);
+    const options = {
+      chartArea: { width: '80%', height: '75%' },
+      legend: { position: 'bottom', textStyle: { fontSize: 12 } },
+      colors: ['#2dc653', '#e63946'],
+      lineWidth: 3,
+      pointSize: 6,
+      fontName: 'DM Sans',
+      backgroundColor: 'transparent',
+      hAxis: { textStyle: { fontSize: 11 } },
+      vAxis: { textStyle: { fontSize: 11 }, format: '₹#,###' },
+      curveType: 'function',
+    };
+    const chart = new google.visualization.LineChart(document.getElementById('chart-line'));
+    chart.draw(data, options);
+  } catch(e) { setError('chart-line', 'Failed to load chart'); }
+}
+
+// ── Bar Chart ─────────────────────────────────────────────
+async function loadBarChart() {
+  setLoading('chart-bar');
+  try {
+    const json = await fetchJSON('/api/charts/weekly-spending/?weeks=8');
+    if (json.data.length <= 1) {
+      document.getElementById('chart-bar').innerHTML =
+        '<div class="empty-state"><i class="bi bi-bar-chart" style="font-size:2rem;display:block;margin-bottom:.5rem;"></i><p>No weekly expense data yet.</p></div>';
+      return;
+    }
+    const data = google.visualization.arrayToDataTable(json.data);
+    const options = {
+      chartArea: { width: '80%', height: '70%' },
+      legend: { position: 'none' },
+      colors: ['#4361ee'],
+      fontName: 'DM Sans',
+      backgroundColor: 'transparent',
+      bar: { groupWidth: '55%' },
+      hAxis: { textStyle: { fontSize: 11 } },
+      vAxis: { textStyle: { fontSize: 11 }, format: '₹#,###' },
+    };
+    const chart = new google.visualization.ColumnChart(document.getElementById('chart-bar'));
+    chart.draw(data, options);
+  } catch(e) { setError('chart-bar', 'Failed to load chart'); }
+}
+
+// ── Redraw on resize ──────────────────────────────────────
+let resizeTimer;
+window.addEventListener('resize', () => {
+  clearTimeout(resizeTimer);
+  resizeTimer = setTimeout(loadAll, 300);
+});
+</script>
+{% endblock %}

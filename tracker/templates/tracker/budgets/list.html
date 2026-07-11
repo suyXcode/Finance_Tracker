@@ -1,0 +1,122 @@
+{% extends "base.html" %}
+{% load finance_tags %}{% load humanize %}
+
+{% block title %}Budgets{% endblock %}
+
+{% block content %}
+
+<!-- Current month budgets -->
+<div class="content-card mb-3">
+  <div class="card-header">
+    <span>
+      <i class="bi bi-piggy-bank me-2 text-primary"></i>
+      {{ month_name }} {{ current_year }} Budgets
+    </span>
+    <a href="{% url 'tracker:budget_create' %}" class="btn btn-primary btn-sm">
+      <i class="bi bi-plus-lg me-1"></i>Set Budget
+    </a>
+  </div>
+  <div class="card-body">
+    {% if budgets %}
+      <div class="row g-3">
+        {% for b in budgets %}
+        <div class="col-md-6 col-xl-4">
+          <div style="background:#f8f9fa;border-radius:12px;padding:1.1rem;">
+            <div class="d-flex justify-content-between align-items-start mb-2">
+              <div class="d-flex align-items-center gap-2">
+                <span style="width:10px;height:10px;border-radius:50%;background:{{ b.category.color }};flex-shrink:0;display:inline-block;"></span>
+                <span class="fw-700" style="font-size:.9rem;">{{ b.category.name }}</span>
+              </div>
+              <div class="action-btns">
+                <a href="{% url 'tracker:budget_edit' b.pk %}" class="btn btn-sm btn-outline-secondary py-0">
+                  <i class="bi bi-pencil" style="font-size:.7rem;"></i>
+                </a>
+                <a href="{% url 'tracker:budget_delete' b.pk %}" class="btn btn-sm btn-outline-danger py-0"
+                   data-confirm="Delete this budget?">
+                  <i class="bi bi-trash" style="font-size:.7rem;"></i>
+                </a>
+              </div>
+            </div>
+
+            <!-- Alert badge -->
+            {% if b.alert_level == 'critical' %}
+            <span class="badge bg-danger mb-2">🚨 Over budget!</span>
+            {% elif b.alert_level == 'warning' %}
+            <span class="badge bg-warning text-dark mb-2">⚠️ Nearing limit</span>
+            {% endif %}
+
+            <div class="budget-label">
+              <span class="text-muted" style="font-size:.78rem;">{{ b.spent|currency }} of {{ b.amount|currency }}</span>
+              <span class="fw-700 {% if b.alert_level == 'critical' %}text-danger{% elif b.alert_level == 'warning' %}text-warning{% else %}text-success{% endif %}">
+                {{ b.percentage_used|percentage }}
+              </span>
+            </div>
+            <div class="budget-bar-track" style="height:8px;">
+              <div class="budget-bar-fill {{ b.progress_bar_class }}"
+                   data-width="{{ b.percentage_used|progress_capped }}"
+                   style="width:0;height:8px;"></div>
+            </div>
+            <div class="mt-2" style="font-size:.75rem;color:#adb5bd;">
+              Remaining:
+              <strong {% if b.remaining < 0 %}class="text-danger"{% else %}class="text-success"{% endif %}>
+                {{ b.remaining|currency }}
+              </strong>
+            </div>
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+    {% else %}
+      <div class="empty-state">
+        <i class="bi bi-piggy-bank"></i>
+        <p>No budgets set for {{ month_name }} {{ current_year }}.<br>
+          <a href="{% url 'tracker:budget_create' %}">Set your first budget</a>
+        </p>
+      </div>
+    {% endif %}
+  </div>
+</div>
+
+<!-- All budgets history -->
+{% if all_budgets %}
+<div class="content-card">
+  <div class="card-header"><span><i class="bi bi-clock-history me-2 text-secondary"></i>All Budgets</span></div>
+  <div class="p-0">
+    <table class="txn-table">
+      <thead>
+        <tr>
+          <th>Period</th><th>Category</th><th class="text-end">Budget</th>
+          <th class="text-end">Spent</th><th class="text-end">Used %</th><th class="text-center">Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for b in all_budgets %}
+        <tr>
+          <td class="fw-600" style="font-size:.83rem;">{{ b.month|month_name }} {{ b.year }}</td>
+          <td>
+            <span class="cat-chip">
+              <span class="cat-dot" style="background:{{ b.category.color }};"></span>
+              {{ b.category.name }}
+            </span>
+          </td>
+          <td class="text-end">{{ b.amount|currency }}</td>
+          <td class="text-end">{{ b.spent|currency }}</td>
+          <td class="text-end">
+            <span class="fw-700 {% if b.alert_level == 'critical' %}text-danger{% elif b.alert_level == 'warning' %}text-warning{% else %}text-success{% endif %}">
+              {{ b.percentage_used|percentage }}
+            </span>
+          </td>
+          <td class="text-center">
+            <div class="action-btns justify-content-center">
+              <a href="{% url 'tracker:budget_edit' b.pk %}" class="btn btn-sm btn-outline-secondary"><i class="bi bi-pencil"></i></a>
+              <a href="{% url 'tracker:budget_delete' b.pk %}" class="btn btn-sm btn-outline-danger" data-confirm="Delete this budget?"><i class="bi bi-trash"></i></a>
+            </div>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endif %}
+{% endblock %}

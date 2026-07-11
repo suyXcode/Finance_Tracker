@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<style>
+  body { font-family: 'Segoe UI', Arial, sans-serif; background:#f0f2f8; margin:0; padding:20px; }
+  .card { background:#fff; max-width:520px; margin:0 auto; border-radius:14px; overflow:hidden; box-shadow:0 4px 20px rgba(0,0,0,.08); }
+  .header { background:linear-gradient(135deg,#f77f00,#e63946); padding:28px 32px; text-align:center; }
+  .header h1 { color:#fff; font-size:1.4rem; margin:0 0 4px; }
+  .header p  { color:rgba(255,255,255,.85); margin:0; font-size:.9rem; }
+  .body { padding:28px 32px; }
+  .stat-row { display:flex; justify-content:space-between; padding:10px 0; border-bottom:1px solid #f0f2f8; font-size:.9rem; }
+  .stat-row:last-child { border-bottom:none; }
+  .stat-label { color:#6c757d; }
+  .stat-val   { font-weight:700; color:#1e2a3a; }
+  .progress-track { background:#e9ecef; border-radius:6px; height:10px; margin:16px 0; }
+  .progress-fill  { background:linear-gradient(90deg,#f77f00,#ffd60a); height:10px; border-radius:6px; }
+  .cta { display:block; text-align:center; background:#4361ee; color:#fff !important; text-decoration:none;
+         padding:12px 28px; border-radius:8px; font-weight:700; margin:20px 0 0; font-size:.9rem; }
+  .footer { background:#f8f9fa; padding:16px 32px; text-align:center; font-size:.75rem; color:#adb5bd; }
+  .alert-badge { display:inline-block; background:rgba(247,127,0,.15); color:#c76400;
+                 border-radius:20px; padding:4px 14px; font-size:.8rem; font-weight:700; margin-bottom:12px; }
+</style>
+</head>
+<body>
+<div class="card">
+  <div class="header">
+    <div style="font-size:2.5rem;margin-bottom:8px;">⚠️</div>
+    <h1>Budget Warning</h1>
+    <p>You're approaching your {{ budget.category.name }} limit</p>
+  </div>
+  <div class="body">
+    <p style="color:#1e2a3a;font-size:.95rem;">Hi {{ user.get_full_name|default:user.username }},</p>
+    <p style="color:#495057;font-size:.88rem;line-height:1.6;">
+      Your spending in <strong>{{ budget.category.name }}</strong> has reached
+      <strong style="color:#f77f00;">{{ percentage|floatformat:1 }}%</strong> of your monthly budget.
+    </p>
+
+    <div class="alert-badge">⚠️ {{ percentage|floatformat:0 }}% used</div>
+
+    <!-- Progress bar -->
+    <div class="progress-track">
+      <div class="progress-fill" style="width:{% if percentage > 100 %}100{% else %}{{ percentage|floatformat:0 }}{% endif %}%;"></div>
+    </div>
+
+    <div class="stat-row"><span class="stat-label">Category</span><span class="stat-val">{{ budget.category.name }}</span></div>
+    <div class="stat-row"><span class="stat-label">Monthly Budget</span><span class="stat-val">₹{{ budget.amount|floatformat:2 }}</span></div>
+    <div class="stat-row"><span class="stat-label">Amount Spent</span><span class="stat-val" style="color:#f77f00;">₹{{ spent|floatformat:2 }}</span></div>
+    <div class="stat-row"><span class="stat-label">Remaining</span><span class="stat-val" style="color:#2dc653;">₹{{ remaining|floatformat:2 }}</span></div>
+    <div class="stat-row"><span class="stat-label">Period</span><span class="stat-val">{{ budget.month }}/{{ budget.year }}</span></div>
+
+    <p style="color:#6c757d;font-size:.83rem;margin-top:16px;">
+      You have <strong>₹{{ remaining|floatformat:2 }}</strong> left in this budget.
+      Consider reviewing your spending to stay on track.
+    </p>
+
+    <a href="#" class="cta">View Dashboard</a>
+  </div>
+  <div class="footer">
+    Personal Finance Tracker &nbsp;·&nbsp; You're receiving this because you set a budget alert.
+  </div>
+</div>
+</body>
+</html>

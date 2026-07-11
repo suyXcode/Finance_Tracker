@@ -1,0 +1,172 @@
+{% extends "base.html" %}
+{% load static %}{% load humanize %}{% load finance_tags %}
+
+{% block title %}Dashboard{% endblock %}
+
+{% block content %}
+{% with s=summary %}
+
+<!-- ── Summary Stats ────────────────────────────────────── -->
+<div class="row g-3 mb-4">
+  <div class="col-sm-6 col-xl-4">
+    <div class="stat-card income">
+      <div class="d-flex align-items-center justify-content-between mb-2">
+        <span class="stat-label">Total Income</span>
+        <div class="stat-icon"><i class="bi bi-arrow-down-circle"></i></div>
+      </div>
+      <div class="stat-value text-success">{{ s.total_income|currency }}</div>
+      <div class="stat-sub">{{ s.month_name }} {{ s.year }}</div>
+    </div>
+  </div>
+  <div class="col-sm-6 col-xl-4">
+    <div class="stat-card expense">
+      <div class="d-flex align-items-center justify-content-between mb-2">
+        <span class="stat-label">Total Expenses</span>
+        <div class="stat-icon"><i class="bi bi-arrow-up-circle"></i></div>
+      </div>
+      <div class="stat-value text-danger">{{ s.total_expense|currency }}</div>
+      <div class="stat-sub">{{ s.month_name }} {{ s.year }}</div>
+    </div>
+  </div>
+  <div class="col-sm-12 col-xl-4">
+    <div class="stat-card balance">
+      <div class="d-flex align-items-center justify-content-between mb-2">
+        <span class="stat-label">Net Balance</span>
+        <div class="stat-icon"><i class="bi bi-wallet2"></i></div>
+      </div>
+      <div class="stat-value {% if s.net_balance >= 0 %}text-success{% else %}text-danger{% endif %}">
+        {{ s.net_balance|currency }}
+      </div>
+      <div class="stat-sub">Income minus expenses</div>
+    </div>
+  </div>
+</div>
+
+<!-- ── Main Grid ─────────────────────────────────────────── -->
+<div class="row g-3">
+
+  <!-- Recent Transactions -->
+  <div class="col-lg-7">
+    <div class="content-card h-100">
+      <div class="card-header">
+        <span><i class="bi bi-clock-history me-2 text-primary"></i>Recent Transactions</span>
+        <a href="{% url 'tracker:transaction_list' %}" class="btn btn-sm btn-outline-primary">View all</a>
+      </div>
+      <div class="card-body p-0">
+        {% if transactions %}
+        <table class="txn-table">
+          <thead>
+            <tr>
+              <th>Date</th>
+              <th>Category</th>
+              <th>Description</th>
+              <th>Amount</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for txn in transactions %}
+            <tr>
+              <td><span class="text-muted" style="font-size:.8rem;">{{ txn.date|date:"d M" }}</span></td>
+              <td>
+                {% if txn.category %}
+                <span class="cat-chip">
+                  <span class="cat-dot" style="background:{{ txn.category.color }};"></span>
+                  {{ txn.category.name }}
+                </span>
+                {% else %}
+                <span class="text-muted" style="font-size:.8rem;">—</span>
+                {% endif %}
+              </td>
+              <td class="text-truncate" style="max-width:140px;">{{ txn.description|default:"—" }}</td>
+              <td class="{{ txn.type|income_color }} fw-700">
+                {{ txn.type|sign_prefix }}{{ txn.amount|currency }}
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+        {% else %}
+        <div class="empty-state">
+          <i class="bi bi-receipt"></i>
+          <p>No transactions yet.<br>
+            <a href="{% url 'tracker:transaction_create' %}">Add your first transaction</a>
+          </p>
+        </div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+
+  <!-- Budget Progress -->
+  <div class="col-lg-5">
+    <div class="content-card h-100">
+      <div class="card-header">
+        <span><i class="bi bi-piggy-bank me-2 text-primary"></i>Budget Progress</span>
+        <a href="{% url 'tracker:budget_list' %}" class="btn btn-sm btn-outline-primary">Manage</a>
+      </div>
+      <div class="card-body">
+        {% if budgets %}
+          {% for b in budgets %}
+          <div class="budget-item">
+            <div class="budget-label">
+              <span>
+                <span class="cat-dot d-inline-block me-1" style="background:{{ b.category.color }};width:8px;height:8px;border-radius:50%;"></span>
+                {{ b.category.name }}
+              </span>
+              <span class="pct {% if b.alert_level == 'critical' %}text-danger fw-700{% elif b.alert_level == 'warning' %}text-warning fw-600{% endif %}">
+                {{ b.percentage_used|percentage }}
+              </span>
+            </div>
+            <div class="budget-bar-track">
+              <div class="budget-bar-fill {{ b.progress_bar_class }}"
+                   data-width="{{ b.percentage_used|progress_capped }}"
+                   style="width:0;"></div>
+            </div>
+            <div class="budget-sub">
+              <span>{{ b.spent|currency }} spent</span>
+              <span>{{ b.amount|currency }} limit</span>
+            </div>
+          </div>
+          {% endfor %}
+        {% else %}
+          <div class="empty-state">
+            <i class="bi bi-piggy-bank"></i>
+            <p>No budgets set for this month.<br>
+              <a href="{% url 'tracker:budget_create' %}">Set a budget</a>
+            </p>
+          </div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+
+</div><!-- /.row -->
+
+<!-- ── Quick Actions ─────────────────────────────────────── -->
+<div class="row g-3 mt-1">
+  <div class="col-12">
+    <div class="content-card">
+      <div class="card-header"><span><i class="bi bi-lightning me-2 text-primary"></i>Quick Actions</span></div>
+      <div class="card-body d-flex flex-wrap gap-2">
+        <a href="{% url 'tracker:transaction_create' %}" class="btn btn-primary">
+          <i class="bi bi-plus-circle me-1"></i>Add Transaction
+        </a>
+        <a href="{% url 'tracker:budget_create' %}" class="btn btn-outline-primary">
+          <i class="bi bi-piggy-bank me-1"></i>Set Budget
+        </a>
+        <a href="{% url 'tracker:analytics' %}" class="btn btn-outline-secondary">
+          <i class="bi bi-bar-chart-line me-1"></i>View Analytics
+        </a>
+        <a href="{% url 'tracker:export_pdf' %}" class="btn btn-outline-danger">
+          <i class="bi bi-filetype-pdf me-1"></i>Export Report
+        </a>
+        <a href="{% url 'tracker:export_csv' %}" class="btn btn-outline-success">
+          <i class="bi bi-filetype-csv me-1"></i>Export CSV
+        </a>
+      </div>
+    </div>
+  </div>
+</div>
+
+{% endwith %}
+{% endblock %}
