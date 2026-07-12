@@ -269,7 +269,7 @@ This project was developed as a collaborative effort by multiple contributors. E
 
 ## 👑 Maintained by
 
-**Project Owner:** **Mr. Jitendra Barik**
+**Project Owner:** **Mr. Jitendra Kumar Barik** (https://github.com/py-007)
 
 - Feature-based development
 - Git branches for each contributor
