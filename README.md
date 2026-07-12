@@ -259,4 +259,40 @@ After `python manage.py runserver`:
 ## 📄 License
 
 MIT — free to use, modify, and distribute.
-# finance_tracker
+
+
+---
+
+# 🤝 Collaborative Project
+
+This project was developed as a collaborative effort by multiple contributors. Each team member contributed to different aspects of the application, including backend development, frontend development, database design, testing, deployment, and documentation.
+
+## 👑 Maintained by
+
+**Project Owner:** **Mr. Jitendra Barik**
+
+- Feature-based development
+- Git branches for each contributor
+- Pull Requests for code review
+- GitHub Issues for task tracking
+- Collaborative testing before merging
+
+## 🤝 Contributors
+**Suyash Singh** (https://github.com/suyXcode)
+
+- Designed responsive UI
+- Implemented dashboard
+- Testing
+- Deployment
+
+
+
+
+
+
+
+
+
+
+
+
