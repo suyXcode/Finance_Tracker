@@ -17,6 +17,18 @@ A production-ready full-stack Django 4.x web application for tracking income, ex
 | **Dashboard** | Income · Expense · Net balance · Budget progress · Recent transactions |
 
 ---
+## 📸 Screenshots
+
+### Dashboard
+![Dashboard](p3.png)
+
+### Login Page
+![Login](p1.png)
+
+### Add value
+![Reports](p2.png)
+
+---
 
 ## 🛠 Tech Stack
 
